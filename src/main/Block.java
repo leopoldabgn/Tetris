@@ -42,11 +42,11 @@ public class Block
 			
 			};
 			
-			private int index;
-			private List<Square> sqr = new ArrayList<>();
-			private Color color;
-			private final int BLOCK_SIZE = GamePanel.BLOCK_SIZE;
-			private int x, y;
+	private int index;
+	private List<Square> sqr = new ArrayList<>();
+	private Color color;
+	private final int BLOCK_SIZE = GamePanel.BLOCK_SIZE;
+	private int x, y;
 		
 	public Block(Block block)
 	{
@@ -215,6 +215,20 @@ public class Block
 	return true;
 	}
 	
+	public boolean isOnTop()
+	{
+		if(sqr == null || sqr.isEmpty())
+			return false;
+		int min = sqr.get(0).getY();
+		for(Square s : sqr)
+			if(s.getY() < min)
+				min = s.getY();
+		// Si le block le plus haut à une valeur negative
+		// Alors il n'est pas encore entierement dans le terrain.
+		// Il est bien en haut : return true;
+		return min < 0;
+	}
+
 	public List<Square> getSquareList()
 	{
 		return sqr;

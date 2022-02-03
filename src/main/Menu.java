@@ -20,7 +20,7 @@ import javax.swing.SwingConstants;
 public class Menu extends JPanel
 {
 	private static final long serialVersionUID = 1L;
-	
+
 	private Window win;
 	private Title title = new Title(20);
 	private MenuBox menuBox = new MenuBox();
@@ -29,10 +29,10 @@ public class Menu extends JPanel
 	
 	public Menu(Window win)//int w, int h)
 	{
-		super();
 		this.win = win;
 		this.setPreferredSize(new Dimension(500,500));
-		
+		this.setBackground(Window.backgroundColor);
+
 		this.add(title);
 		this.add(menuBox);
 	}
@@ -78,7 +78,7 @@ public class Menu extends JPanel
 			
 		public Title(int fontSize)
 		{
-			super();
+			this.setBackground(Window.backgroundColor);
 			int x = 0, y = 0, size = fontSize;
 			this.setPreferredSize(new Dimension(((size*4)*(letters.length+1))-size, size*5));
 			for(int i=0;i<letters.length;i++)
@@ -132,17 +132,22 @@ public class Menu extends JPanel
 		
 		public MenuBox()
 		{
-			super();
+			this.setBackground(Window.backgroundColor);
 			//Color boxColor = Color.GRAY;
 			pan1 = new JPanel();
+			pan1.setBackground(Window.backgroundColor);
 			pan2 = new JPanel();
+			pan2.setBackground(Window.backgroundColor);
 			pan3 = new JPanel();
+			pan3.setBackground(Window.backgroundColor);
 			
 			mod = new JLabel("Normal Mod");
+			mod.setForeground(Color.WHITE);
 			if(musics != null)
 				music = new JLabel(getNoExtName(new File(musics[0])));
 			else
 				music = new JLabel("No Music");
+			music.setForeground(Color.WHITE);
 			
 			this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 			//pan1.setBackground(boxColor);
@@ -234,8 +239,8 @@ public class Menu extends JPanel
 	        setForeground(Color.RED);
 	        this.setFont(new Font(txt, Font.BOLD, 34));
 	        setOpaque(false);
-	        setContentAreaFilled(false); // On met à false pour empêcher le composant de peindre l'intérieur du JButton.
-	        setBorderPainted(false); // De même, on ne veut pas afficher les bordures.
+	        setContentAreaFilled(false); // On met a false pour empecher le composant de peindre l'interieur du JButton.
+	        setBorderPainted(false); // De meme, on ne veut pas afficher les bordures.
 	        setFocusPainted(false); // On n'affiche pas l'effet de focus.
 	         
 	        setHorizontalAlignment(SwingConstants.CENTER);

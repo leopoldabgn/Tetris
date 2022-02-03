@@ -1,7 +1,9 @@
 package main;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -19,6 +22,8 @@ import javax.swing.Timer;
 public class GamePanel extends JPanel implements ActionListener, KeyListener
 {
 	private static final long serialVersionUID = 1L;
+
+	private Window window;
 
 	private Timer timer = new Timer(1, this);
 	private AudioPlayer fallingSound = new AudioPlayer("sounds/fall.wav", false),
@@ -38,7 +43,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 				   linesLbl = new JLabel(""+lines);
 	private GameContainer gameContainer;
 	private InfoContainer infoContainer;
-	private boolean lockedBlock = false;
+	private boolean lockedBlock = false, gameOver;
 	// Global variables for BlinkAnimation :
 	
 	private boolean blinkAnim = false;
@@ -51,9 +56,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 	
 	private boolean pause = false;
 	
-	public GamePanel(int mod) // 10x20 --> 300x600 --> chaque cube = 30x30.
+	public GamePanel(Window window, int mod) // 10x20 --> 300x600 --> chaque cube = 30x30.
 	{
-		super();
+		this.window = window;
 		if(mod == 1)
 			genLevel(0); /////
 		block = getRandomBlock();
@@ -80,16 +85,17 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 		g.drawImage(img, 0, 0, null);
 		gameContainer.repaint();
 		infoContainer.repaint();
-		if(pause)
-		{
-			g.setColor(new Color(0, 0, 0, 127));
-			g.fillRect(0, 0, this.getWidth(), this.getHeight());
-		}
+		if(pause || gameOver)
+			drawBlackScreen(g);
 	}
 	
 	@Override
 	public void actionPerformed(ActionEvent e) 
 	{
+		// Au cas ou :
+		if(gameOver)
+			return;
+		
 		if(!blinkAnim && !fallAnim)
 		{
 			if(lockedBlock)
@@ -99,9 +105,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 				nextBlock = getRandomBlock(block.getIndex(), block.getColor());
 				infoContainer.setNextBlock(nextBlock);
 				int[] tab = searchLines();
-				//delLines(tab); //// On supprimer les lignes !! Alors qu'on en a besoin apres !!!
+				//delLines(tab); //// On supprime les lignes !! Alors qu'on en a besoin apres !!!
 				repaint();
-				//listLines = fallLines(); /// On recuperer uniquement si elles ont ete supprimé !
+				//listLines = fallLines(); /// On recuperer uniquement si elles ont ete supprime !
 				if(tab != null)
 				{
 					refreshInfoPan(tab);
@@ -121,6 +127,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 				}
 				else if(isOnTheGround(block) || isBlocked(block))
 				{
+					if(block.isOnTop()) {
+						timer.stop();
+						gameOver = true;
+						gameContainer.gameOverPan.setVisible(true);
+						repaint();
+					}
 					lockedBlock = true;
 					fallingSound.restart();
 					fallingSound.play();
@@ -146,6 +158,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 	@Override
 	public void keyPressed(KeyEvent e) 
 	{
+		if(gameOver)
+			return;
 		if(!pause || e.getKeyCode() == KeyEvent.VK_ESCAPE)
 		{
 			if(!fallAnim && !blinkAnim)
@@ -209,11 +223,35 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 	{
 		private static final long serialVersionUID = 1L;
 		
+		private JPanel gameOverPan;
+
 		public GameContainer(int w, int h)
 		{
 			super();
 			this.setPreferredSize(new Dimension(w, h));
 			this.setBackground(Color.BLACK);
+			this.setLayout(null);
+			JButton restart, menu;
+			restart = new JButton("Restart");
+			restart.addActionListener(e -> {
+				restartGame();
+			});
+			menu = new JButton("Menu");
+			menu.addActionListener(e -> {
+				backToMenu();
+			});
+			gameOverPan = new JPanel();
+			gameOverPan.setOpaque(false);
+			gameOverPan.setLayout(new BorderLayout());
+			gameOverPan.setSize(220, 40);
+			gameOverPan.setLocation(39, 3*(int)getPreferredSize().getHeight()/4);
+			gameOverPan.add(restart, BorderLayout.WEST);
+			gameOverPan.add(menu, BorderLayout.EAST);
+
+			// INVISIBLE au debut.
+			gameOverPan.setVisible(false);
+
+			this.add(gameOverPan, BorderLayout.SOUTH);
 		}
 		
 		public void paintComponent(Graphics g)
@@ -223,9 +261,19 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 			for(int j=0;j<HEIGHT_BLOCK_MAX;j++)
 				for(int i=0;i<WIDTH_BLOCK_MAX;i++)
 					g.drawRect(i*BLOCK_SIZE, j*BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);*/
-				
 			block.draw(g);
 			dispMainTab(g);
+
+			if(pause || gameOver)
+			{
+				drawBlackScreen(g);
+				g.setFont(new Font("Sans-serif", Font.BOLD, 36));
+				g.setColor(Color.WHITE);
+			}
+			if(pause)
+				g.drawString("PAUSE", 85, getHeight()/2 - 20);
+			else if(gameOver)
+				g.drawString("GAME OVER", 28, getHeight()/2 - 20);
 		}
 		
 	}
@@ -238,7 +286,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 		
 		public InfoContainer(int w, int h)
 		{
-			super();
 			this.setPreferredSize(new Dimension(w, h));
 			
 			scorePan = new BoxPan(w-10, 100, "SCORE", scoreLbl);
@@ -257,7 +304,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 		}
 		
 	}
-	
+
 	public static Color getRandColor()
 	{
 		int randNb = (int)(Math.random()*7);
@@ -664,6 +711,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 		
 	}
 	
+	public void drawBlackScreen(Graphics g)
+	{
+		g.setColor(new Color(0, 0, 0, 210));
+		g.fillRect(0, 0, this.getWidth(), this.getHeight());
+	}
+
 	public void setPause()
 	{
 		pause = true;
@@ -677,6 +730,44 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener
 		timer.start();
 	}
 	
+	public void restartGame()
+	{
+		block = getRandomBlock();
+		nextBlock = getRandomBlock(block.getIndex(), block.getColor());
+		
+		score = 0;
+		level = 0;
+		lines = 0;
+		lockedBlock = false;
+		blinkAnim = false;
+		indexLines = 0;
+		countIndex = 0;
+		fallAnim = false;
+		pause = false;
+		mainTab = new Square[HEIGHT_BLOCK_MAX][WIDTH_BLOCK_MAX];
+		scoreLbl = new JLabel(""+score);
+		levelLbl = new JLabel(""+level);
+		linesLbl = new JLabel(""+lines);
+
+		gameContainer = new GameContainer(WIDTH, HEIGHT);
+		infoContainer = new InfoContainer(WIDTH/2, HEIGHT);
+
+		this.removeAll();
+		this.add(gameContainer);
+		this.add(infoContainer);
+		timer.start();
+	    this.savedTime = System.currentTimeMillis();
+	    this.savedTimeRotation = savedTime;
+		gameOver = false;
+		revalidate();
+		repaint();
+	}
+
+	public void backToMenu()
+	{
+		window.setMenuView();
+	}
+
 }
 
 
